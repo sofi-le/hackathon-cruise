@@ -1,40 +1,60 @@
 {
-  "hud_fmr_baseline": {
-    "zip": "02118",
-    "area": "Boston-Cambridge-Quincy, MA-NH HUD Metro FMR Area",
-    "year": 2024,
-    "monthly_fmr_usd": { "studio": 2096, "1br": 2364, "2br": 2826, "3br": 3543, "4br": 3879 }
-  },
-  "listings": [
+  "cultural_fit_examples": [
+    {
+      "id": "cantonese-quincy",
+      "location": "Quincy, MA 02169",
+      "origin": "Hong Kong (Cantonese)",
+      "languages": ["Cantonese", "English"],
+      "survey": {
+        "cook_at_home": "Cantonese food, fresh seafood, dim sum ingredients",
+        "faith": "none",
+        "social": ["mahjong", "tai chi in the park", "Cantonese-speaking community"],
+        "cares_most_about": ["food", "community", "language"]
+      }
+    },
+    {
+      "id": "vietnamese-dorchester",
+      "location": "Fields Corner, Dorchester, Boston, MA",
+      "origin": "Vietnam",
+      "languages": ["Vietnamese", "English"],
+      "survey": {
+        "cook_at_home": "Vietnamese groceries, pho, fresh herbs",
+        "faith": "Buddhist",
+        "social": ["Vietnamese community center", "lunar new year events"],
+        "cares_most_about": ["food", "faith", "community"]
+      }
+    },
+    {
+      "id": "ethiopian-cambridge",
+      "location": "Cambridge, MA 02139",
+      "origin": "Ethiopia",
+      "languages": ["Amharic", "English"],
+      "survey": {
+        "cook_at_home": "injera, berbere, Ethiopian groceries",
+        "faith": "Ethiopian Orthodox",
+        "social": ["coffee ceremony", "Habesha community", "soccer"],
+        "cares_most_about": ["food", "faith", "social"]
+      }
+    }
+  ],
+  "scam_check_examples": [
     {
       "id": "scam-1",
       "label": "scam",
       "pattern": "below-market bait + wire deposit + absentee landlord",
-      "input": "Beautiful sunny 2BR in South End, 02118 — only $1,200/month, utilities included! I was recently relocated abroad for missionary work so I cannot show the apartment in person, but the place is move-in ready. To reserve it, send the first month + $1,200 security deposit by Zelle or Western Union and I will FedEx you the keys and lease. God bless. Please hurry, many people are interested."
-    },
-    {
-      "id": "scam-2",
-      "label": "scam",
-      "pattern": "deposit-before-viewing + urgency + gift-card payment",
-      "input": "Renting cozy 1 bedroom near Boston Medical Center, $1,000/mo. No credit check, no broker, perfect for students and new arrivals. Apartment is occupied right now so no showings until you secure it. Send a $500 holding deposit in Apple gift cards today to hold it — this won't last, I have 12 other inquiries. Text me only, do not call."
-    },
-    {
-      "id": "scam-3",
-      "label": "scam",
-      "pattern": "reused photos + off-platform payment + email-only contact",
-      "input": "Luxury 3BR condo South End 02118 — $1,500/month including parking and heat. (Photos look like a staged real-estate listing.) Owner is out of state and uses a 'rental agent' who will mail the keys after you pay first, last, and deposit via CashApp. Contact only through email; the agent cannot meet you but is fully trustworthy."
+      "input": "Beautiful sunny 2BR in South End, 02118 — only $1,200/month, utilities included! I was relocated abroad so I cannot show it in person. To reserve, send first month + $1,200 deposit by Zelle or Western Union and I will FedEx the keys. Please hurry, many people are interested."
     },
     {
       "id": "legit-1",
       "label": "legit",
       "pattern": "at-market rent + in-person viewing + standard MA fees",
-      "input": "2BR apartment in the South End, 02118, available Sept 1 — $2,850/month. Hardwood floors, laundry in building. Showings this Saturday 10am–12pm, please come by. Standard move-in: first month, last month, and one month security deposit, paid by check or bank transfer after you sign the lease. Managed by Beacon Hill Property Management, licensed in MA."
-    },
-    {
-      "id": "legit-2",
-      "label": "legit",
-      "pattern": "market rent + broker disclosed + viewing offered",
-      "input": "Studio in the South End near 02118, $2,100/month, heat and hot water included. Available now. Broker fee equal to one month (disclosed upfront). We do in-person tours daily; schedule through our office line. Application via our website with standard credit and income check. Lease and payment handled in person at signing."
+      "input": "2BR in the South End, 02118, available Sept 1 — $2,850/month. Showings this Saturday 10am–12pm. Standard move-in: first, last, and one month security deposit, paid after you sign the lease. Managed by a licensed MA property manager."
     }
-  ]
+  ],
+  "hud_fmr_baseline": {
+    "zip": "02118",
+    "area": "Boston-Cambridge-Quincy, MA-NH HUD Metro FMR Area",
+    "year": 2024,
+    "monthly_fmr_usd": { "studio": 2096, "1br": 2364, "2br": 2826, "3br": 3543, "4br": 3879 }
+  }
 }
