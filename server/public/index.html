@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harbor — find where you belong</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⚓</span>
+      <div>
+        <h1>Harbor</h1>
+        <p class="tag">Find where you belong — not just where you live.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ---------------- Form / filter ---------------- -->
+    <section class="panel form-panel">
+      <h2>Tell us about you</h2>
+
+      <label class="field">
+        <span>Where are you from? <em>(heritage / background)</em></span>
+        <input id="origin" type="text" placeholder="e.g. Hong Kong (Cantonese)" />
+      </label>
+
+      <label class="field">
+        <span>Languages you speak</span>
+        <input id="languages" type="text" placeholder="e.g. Cantonese, English" />
+      </label>
+
+      <label class="field">
+        <span>What do you cook at home?</span>
+        <input id="cook" type="text" placeholder="e.g. Cantonese groceries, fresh seafood, dim sum" />
+      </label>
+
+      <label class="field">
+        <span>Faith / community institution <em>(optional)</em></span>
+        <input id="faith" type="text" placeholder="e.g. Buddhist, none" />
+      </label>
+
+      <label class="field">
+        <span>Social interests</span>
+        <input id="social" type="text" placeholder="e.g. mahjong, tai chi, language meetups" />
+      </label>
+
+      <div class="field">
+        <span>What matters most? <em>(pick any)</em></span>
+        <div id="cares" class="chips">
+          <button type="button" class="chip" data-v="food">🍜 Food</button>
+          <button type="button" class="chip" data-v="community">🤝 Community</button>
+          <button type="button" class="chip" data-v="faith">🛐 Faith</button>
+          <button type="button" class="chip" data-v="social">☕ Social</button>
+          <button type="button" class="chip" data-v="language">💬 Language</button>
+          <button type="button" class="chip" data-v="safety">🛡️ Safety</button>
+        </div>
+      </div>
+
+      <hr />
+
+      <label class="field">
+        <span>Neighborhood, address, or ZIP <em>(required)</em></span>
+        <input id="location" type="text" placeholder="e.g. Quincy, MA 02169" />
+      </label>
+
+      <label class="field">
+        <span>Results language</span>
+        <input id="lang" type="text" value="English" />
+      </label>
+
+      <details class="advanced">
+        <summary>Paste a rental listing to also scam-check it (optional)</summary>
+        <textarea id="listing" rows="4" placeholder="Paste listing text or a URL…"></textarea>
+      </details>
+
+      <button id="go" class="primary">Check cultural fit</button>
+      <p id="err" class="err" hidden></p>
+    </section>
+
+    <!-- ---------------- Results ---------------- -->
+    <section class="panel result-panel">
+      <div id="empty" class="empty">
+        <p>Your cultural-fit report will appear here.</p>
+        <p class="muted">Real places & facts are pulled live from the web with citations.</p>
+        <button id="demo" class="ghost">Try a demo profile</button>
+      </div>
+
+      <div id="loading" class="loading" hidden>
+        <div class="spinner"></div>
+        <p id="loadmsg">Researching the neighborhood…</p>
+      </div>
+
+      <div id="result" hidden></div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -14,7 +14,11 @@
 // No database. Run with: npm start
 
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { GoogleGenAI } from "@google/genai";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const MODEL = "gemini-2.5-flash";
 const PORT = process.env.PORT || 8787;
@@ -39,9 +43,25 @@ const HUD_FMR = {
 // Gemini helpers
 // ===========================================================================
 
+// Retry transient Gemini errors (429 rate limit, 500/503 overload) with backoff.
+async function generate(req, tries = 3) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await ai.models.generateContent(req);
+    } catch (e) {
+      const code = Number(e?.status ?? e?.code);
+      if (![429, 500, 503].includes(code) || i === tries - 1) throw e;
+      last = e;
+      await new Promise((r) => setTimeout(r, 900 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
 // Structured JSON output (no tools). Fast — thinking disabled.
 async function runJSON(system, content, schema, maxTokens = 2048) {
-  const response = await ai.models.generateContent({
+  const response = await generate({
     model: MODEL,
     contents: content, // string OR array of parts
     config: {
@@ -57,7 +77,7 @@ async function runJSON(system, content, schema, maxTokens = 2048) {
 
 // Google Search grounded output (free text + citations). Used for fact-checking.
 async function runGrounded(system, prompt, maxTokens = 2048) {
-  const response = await ai.models.generateContent({
+  const response = await generate({
     model: MODEL,
     contents: prompt,
     config: {
@@ -313,6 +333,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve the demo frontend (server/public/index.html at "/").
+app.use(express.static(path.join(__dirname, "public")));
+
 // MAIN — cultural-fit filter
 app.post("/cultural-fit", async (req, res) => {
   try {
@@ -350,7 +373,6 @@ app.post("/analyze-listing", async (req, res) => {
   }
 });
 
-app.get("/", (_req, res) =>
-  res.send("Harbor backend OK. POST /cultural-fit { location, origin, survey, lang } | POST /analyze-listing { input, lang }"));
+app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => console.log(`Harbor backend listening on http://localhost:${PORT}`));
