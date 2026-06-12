@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Harbor — find where you belong</title>
+  <title>Harbor — spot scams &amp; find where you belong</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -14,171 +14,112 @@
     <span class="logo">⚓️</span>
     <div>
       <h1>Harbor</h1>
-      <p class="tag">find where you belong ✨</p>
+      <p class="tag">don't get scammed — find where you belong ✨</p>
     </div>
   </header>
 
   <main class="layout">
-    <!-- ---------------- Filters ---------------- -->
-    <section class="panel form-panel">
-      <h2>🎀 Your filters</h2>
-
-      <div class="grid2">
-        <label class="field">
-          <span>Why are you moving?</span>
-          <select id="why">
-            <option value="">Pick one…</option>
-            <option>Job</option>
-            <option>School</option>
-            <option>Vacation</option>
-            <option>Family</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>When?</span>
-          <select id="timing">
-            <option value="">Pick one…</option>
-            <option>ASAP</option>
-            <option>Within 1 month</option>
-            <option>1–3 months</option>
-            <option>Just exploring</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Apartment type</span>
-          <select id="aptType">
-            <option value="">Any</option>
-            <option>Studio</option>
-            <option>1 bedroom</option>
-            <option>2 bedrooms</option>
-            <option>3+ bedrooms</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Area / neighborhood</span>
-          <select id="location">
-            <option value="">Pick an area…</option>
-            <option>Quincy, MA</option>
-            <option>Malden, MA</option>
-            <option>Chinatown, Boston, MA</option>
-            <option>Allston/Brighton, Boston, MA</option>
-            <option>Fields Corner, Dorchester, MA</option>
-            <option>East Boston, MA</option>
-            <option>Cambridge, MA</option>
-            <option>Somerville, MA</option>
-            <option>Lowell, MA</option>
-            <option>Revere, MA</option>
-            <option value="__other">Other… (type it)</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Your culture / heritage</span>
-          <select id="culture">
-            <option value="">Pick one…</option>
-            <option>Chinese — Cantonese / Hong Kong</option>
-            <option>Chinese — Mandarin</option>
-            <option>Vietnamese</option>
-            <option>Korean</option>
-            <option>Japanese</option>
-            <option>Filipino</option>
-            <option>Indian (South Asian)</option>
-            <option>Ethiopian</option>
-            <option>Nigerian</option>
-            <option>Haitian</option>
-            <option>Cape Verdean</option>
-            <option>Dominican</option>
-            <option>Mexican</option>
-            <option>Brazilian</option>
-            <option>Arab / Middle Eastern</option>
-            <option>Irish</option>
-            <option>Italian</option>
-            <option value="__other">Other… (type it)</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Results language</span>
-          <select id="lang">
-            <option>English</option>
-            <option>Español</option>
-            <option>中文 (Chinese)</option>
-            <option>Tiếng Việt (Vietnamese)</option>
-            <option>हिन्दी (Hindi)</option>
-            <option>العربية (Arabic)</option>
-            <option>Português</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="field" id="otherLocWrap" hidden>
-        <span>Type your area</span>
-        <input id="otherLoc" type="text" placeholder="e.g. Worcester, MA 01608" />
-      </label>
-      <label class="field" id="otherCulWrap" hidden>
-        <span>Type your heritage</span>
-        <input id="otherCul" type="text" placeholder="e.g. Cantonese / Hong Kong" />
-      </label>
-
-      <div class="field">
-        <span>💛 Culture / wants</span>
-        <div id="cares" class="chips">
-          <button type="button" class="chip" data-v="food">🍜 Food</button>
-          <button type="button" class="chip" data-v="community">🤝 Community</button>
-          <button type="button" class="chip" data-v="faith">🛐 Faith</button>
-          <button type="button" class="chip" data-v="social">☕ Social</button>
-          <button type="button" class="chip" data-v="language">💬 Language</button>
-          <button type="button" class="chip" data-v="safety">🛡️ Safety</button>
+    <div class="left">
+      <!-- ---------------- SCAM CHECK (hero) ---------------- -->
+      <section class="panel scam-card">
+        <div class="scam-head">
+          <span class="badge">🚨 Scam check</span>
+          <h2>Is this rental a scam?</h2>
         </div>
-      </div>
+        <p class="sub">Renting from far away is risky. Paste the listing, link, or the landlord's
+          message — we'll flag scam tactics and write a complaint you can actually send.</p>
+        <textarea id="listing" rows="6" placeholder="Paste the rental listing text, a URL, or the landlord's message here…"></textarea>
+        <p class="hint">💡 Works on its own, or alongside the cultural filters below.</p>
+      </section>
 
-      <div class="field">
-        <span>🛋️ Amenities</span>
-        <div id="amenities" class="chips">
-          <button type="button" class="chip" data-v="In-unit laundry">🧺 Laundry</button>
-          <button type="button" class="chip" data-v="Parking">🚗 Parking</button>
-          <button type="button" class="chip" data-v="Gym">🏋️ Gym</button>
-          <button type="button" class="chip" data-v="Dishwasher">🍽️ Dishwasher</button>
-          <button type="button" class="chip" data-v="Air conditioning">❄️ A/C</button>
-          <button type="button" class="chip" data-v="Pet friendly">🐾 Pet-friendly</button>
-          <button type="button" class="chip" data-v="Furnished">🛏️ Furnished</button>
+      <!-- ---------------- Cultural filters ---------------- -->
+      <section class="panel form-panel">
+        <h2>🎀 Cultural filters</h2>
+        <div class="grid2">
+          <label class="field"><span>Why are you moving?</span>
+            <select id="why"><option value="">Pick one…</option><option>Job</option><option>School</option><option>Vacation</option><option>Family</option></select>
+          </label>
+          <label class="field"><span>When?</span>
+            <select id="timing"><option value="">Pick one…</option><option>ASAP</option><option>Within 1 month</option><option>1–3 months</option><option>Just exploring</option></select>
+          </label>
+          <label class="field"><span>Apartment type</span>
+            <select id="aptType"><option value="">Any</option><option>Studio</option><option>1 bedroom</option><option>2 bedrooms</option><option>3+ bedrooms</option></select>
+          </label>
+          <label class="field"><span>Area / neighborhood</span>
+            <select id="location">
+              <option value="">Pick an area…</option>
+              <option value="__from_listing">📍 Use the listing's location</option>
+              <option>Quincy, MA</option><option>Malden, MA</option><option>Chinatown, Boston, MA</option>
+              <option>Allston/Brighton, Boston, MA</option><option>Fields Corner, Dorchester, MA</option>
+              <option>East Boston, MA</option><option>Cambridge, MA</option><option>Somerville, MA</option>
+              <option>Lowell, MA</option><option>Revere, MA</option><option value="__other">Other… (type it)</option>
+            </select>
+          </label>
+          <label class="field"><span>Your culture / heritage</span>
+            <select id="culture">
+              <option value="">Pick one…</option>
+              <option>Chinese — Cantonese / Hong Kong</option><option>Chinese — Mandarin</option><option>Vietnamese</option>
+              <option>Korean</option><option>Japanese</option><option>Filipino</option><option>Indian (South Asian)</option>
+              <option>Ethiopian</option><option>Nigerian</option><option>Haitian</option><option>Cape Verdean</option>
+              <option>Dominican</option><option>Mexican</option><option>Brazilian</option><option>Arab / Middle Eastern</option>
+              <option>Irish</option><option>Italian</option><option value="__other">Other… (type it)</option>
+            </select>
+          </label>
+          <label class="field"><span>Results language</span>
+            <select id="lang"><option>English</option><option>Español</option><option>中文 (Chinese)</option><option>Tiếng Việt (Vietnamese)</option><option>हिन्दी (Hindi)</option><option>العربية (Arabic)</option><option>Português</option></select>
+          </label>
         </div>
-      </div>
 
-      <div class="field">
-        <span>♿ Accessibility</span>
-        <div id="access" class="chips">
-          <button type="button" class="chip" data-v="Step-free entry">🚪 Step-free entry</button>
-          <button type="button" class="chip" data-v="Elevator">🛗 Elevator</button>
-          <button type="button" class="chip" data-v="Wheelchair accessible">♿ Wheelchair</button>
-          <button type="button" class="chip" data-v="Ground floor">⬇️ Ground floor</button>
-          <button type="button" class="chip" data-v="Grab bars">🤝 Grab bars</button>
+        <label class="field" id="otherLocWrap" hidden><span>Type your area</span><input id="otherLoc" type="text" placeholder="e.g. Worcester, MA 01608" /></label>
+        <label class="field" id="otherCulWrap" hidden><span>Type your heritage</span><input id="otherCul" type="text" placeholder="e.g. Cantonese / Hong Kong" /></label>
+
+        <div class="field"><span>💛 Culture / wants</span>
+          <div id="cares" class="chips">
+            <button type="button" class="chip" data-v="food">🍜 Food</button>
+            <button type="button" class="chip" data-v="community">🤝 Community</button>
+            <button type="button" class="chip" data-v="faith">🛐 Faith</button>
+            <button type="button" class="chip" data-v="social">☕ Social</button>
+            <button type="button" class="chip" data-v="language">💬 Language</button>
+            <button type="button" class="chip" data-v="safety">🛡️ Safety</button>
+          </div>
         </div>
-      </div>
+        <div class="field"><span>🛋️ Amenities</span>
+          <div id="amenities" class="chips">
+            <button type="button" class="chip" data-v="In-unit laundry">🧺 Laundry</button>
+            <button type="button" class="chip" data-v="Parking">🚗 Parking</button>
+            <button type="button" class="chip" data-v="Gym">🏋️ Gym</button>
+            <button type="button" class="chip" data-v="Dishwasher">🍽️ Dishwasher</button>
+            <button type="button" class="chip" data-v="Air conditioning">❄️ A/C</button>
+            <button type="button" class="chip" data-v="Pet friendly">🐾 Pet-friendly</button>
+            <button type="button" class="chip" data-v="Furnished">🛏️ Furnished</button>
+          </div>
+        </div>
+        <div class="field"><span>♿ Accessibility</span>
+          <div id="access" class="chips">
+            <button type="button" class="chip" data-v="Step-free entry">🚪 Step-free entry</button>
+            <button type="button" class="chip" data-v="Elevator">🛗 Elevator</button>
+            <button type="button" class="chip" data-v="Wheelchair accessible">♿ Wheelchair</button>
+            <button type="button" class="chip" data-v="Ground floor">⬇️ Ground floor</button>
+            <button type="button" class="chip" data-v="Grab bars">🤝 Grab bars</button>
+          </div>
+        </div>
 
-      <details class="advanced">
-        <summary>📋 Paste a rental listing to scam-check it (optional)</summary>
-        <textarea id="listing" rows="3" placeholder="Paste listing text or a URL…"></textarea>
-      </details>
-
-      <button id="go" class="primary">🔎 Find my fit</button>
-      <p id="err" class="err" hidden></p>
-    </section>
+        <button id="go" class="primary">🔎 Check it out</button>
+        <p id="err" class="err" hidden></p>
+      </section>
+    </div>
 
     <!-- ---------------- Results ---------------- -->
     <section class="panel result-panel">
       <div id="empty" class="empty">
-        <div class="big">🏡</div>
-        <p>Your belonging report shows up here!</p>
-        <p class="muted">Real places &amp; facts, pulled live with citations.</p>
+        <div class="big">🛡️</div>
+        <p>Paste a listing or set your filters, then hit <b>Check it out</b>.</p>
+        <p class="muted">Real places &amp; scam checks, verified live with citations.</p>
         <button id="demo" class="ghost">✨ Try a demo</button>
       </div>
       <div id="loading" class="loading" hidden>
         <div class="spinner"></div>
-        <p>Researching your neighborhood…</p>
+        <p>Checking the listing &amp; researching the neighborhood…</p>
       </div>
       <div id="result" hidden></div>
     </section>

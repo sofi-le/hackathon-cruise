@@ -43,7 +43,7 @@ const HUD_FMR = {
 // Gemini helpers
 // ===========================================================================
 
-// Retry transient Gemini errors (429 rate limit, 500/503 overload) with backoff.
+// Retry transient overloads (500/503) with backoff. 429 = quota: fail fast & clear.
 async function generate(req, tries = 3) {
   let last;
   for (let i = 0; i < tries; i++) {
@@ -51,7 +51,9 @@ async function generate(req, tries = 3) {
       return await ai.models.generateContent(req);
     } catch (e) {
       const code = Number(e?.status ?? e?.code);
-      if (![429, 500, 503].includes(code) || i === tries - 1) throw e;
+      if (code === 429)
+        throw new Error("Gemini quota exceeded (free-tier limit for this Google account). Wait for the daily reset, switch to a key from a different account, or enable billing.");
+      if (![500, 503].includes(code) || i === tries - 1) throw e;
       last = e;
       await new Promise((r) => setTimeout(r, 900 * (i + 1)));
     }
@@ -60,7 +62,7 @@ async function generate(req, tries = 3) {
 }
 
 // Structured JSON output (no tools). Fast — thinking disabled.
-async function runJSON(system, content, schema, maxTokens = 2048) {
+async function runJSON(system, content, schema, maxTokens = 4096) {
   const response = await generate({
     model: MODEL,
     contents: content, // string OR array of parts
@@ -72,7 +74,14 @@ async function runJSON(system, content, schema, maxTokens = 2048) {
       thinkingConfig: { thinkingBudget: 0 },
     },
   });
-  return JSON.parse(response.text ?? "{}");
+  let text = (response.text ?? "{}").trim();
+  if (text.startsWith("```")) text = text.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    const finish = response.candidates?.[0]?.finishReason;
+    throw new Error(`Model returned ${finish === "MAX_TOKENS" ? "truncated output (hit token limit)" : "invalid JSON"}: ${e.message}`);
+  }
 }
 
 // Google Search grounded output (free text + citations). Used for fact-checking.
@@ -171,8 +180,17 @@ const FIT_SCHEMA = {
       required: ["summary"],
     },
     gaps: { type: "ARRAY", items: { type: "STRING" }, description: "Honest cultural gaps, e.g. 'No nearby Vietnamese grocery within 2mi'." },
+    verdict: {
+      type: "OBJECT",
+      description: "ONE unified takeaway that ties cultural belonging AND the listing's scam risk together.",
+      properties: {
+        headline: { type: "STRING", description: "One punchy sentence combining belonging + safety." },
+        recommendation: { type: "STRING", description: "What the renter should actually do next, referencing both the fit and the scam result." },
+      },
+      required: ["headline", "recommendation"],
+    },
   },
-  required: ["cultural_fit", "dimensions", "safety", "gaps"],
+  required: ["cultural_fit", "dimensions", "safety", "gaps", "verdict"],
 };
 
 // 1) PROFILE — turn "where you're from" + survey into a structured profile.
@@ -194,32 +212,58 @@ async function discoverPlaces(location, profile, lang) {
   );
 }
 
-// 3) FILTER — score the location against the profile into the final result.
-async function filterFit(location, profile, discovered, sources, lang) {
+// 3) FILTER — score the location against the profile AND fuse in the scam result.
+async function filterFit(location, profile, discovered, sources, scam, lang) {
   return runJSON(
-    `You are FILTER, a cultural-fit scoring agent. Given the user's profile, a location, and grounded research about real nearby places, produce a cultural-fit assessment.
-Score each dimension (food, community, faith, social, language, safety) 0-100 by how well this location serves THIS person's needs, weighted by their priorities. Compute an overall cultural_fit.score as a priority-weighted blend. Put the relevant real places under each dimension. For each place's "source", only use a URL from the provided sources list — never invent one; leave it empty if none applies. List honest gaps. Do not invent places not present in the research. ${respondIn(lang)}`,
-    JSON.stringify({ location, profile, research: discovered, allowed_sources: sources.map((s) => s.url) }),
+    `You are FILTER, a cultural-fit scoring agent. Given the user's profile, a location, grounded research about real nearby places, and (optionally) the SCAM analysis of a specific listing the renter is considering, produce the combined assessment.
+Score each dimension (food, community, faith, social, language, safety) 0-100 by how well this location serves THIS person's needs, weighted by their priorities. Compute an overall cultural_fit.score as a priority-weighted blend. Put the relevant real places under each dimension. For each place's "source", only use a URL from the provided sources list — never invent one; leave it empty if none applies. List honest gaps. Do not invent places not present in the research.
+Then write ONE unified "verdict" that fuses belonging and safety: if the listing's scam risk is "caution" or "scam", warn clearly and steer the renter to the REAL, safe places found here instead of paying that listing; if there is no listing or it looks safe, affirm the fit and give a concrete next step. The verdict must reference BOTH the cultural fit and the scam result when a listing is present.
+Keep it compact: AT MOST 4 places per dimension, each "note" one short sentence, "why" one sentence, summary at most 2 sentences. ${respondIn(lang)}`,
+    JSON.stringify({
+      location,
+      profile,
+      research: discovered,
+      allowed_sources: sources.map((s) => s.url),
+      listing_scam_analysis: scam ? { risk: scam.risk, flags: scam.flags } : null,
+    }),
     FIT_SCHEMA,
-    3072,
+    8192,
   );
 }
 
 async function culturalFit({ location, origin, languages, survey, lang, listing }) {
+  const hasListing = typeof listing === "string" && listing.trim();
   const profile = await buildProfile({ origin, languages, survey }, lang);
-  const { text: research, sources } = await discoverPlaces(location, profile, lang);
-  const fit = await filterFit(location, profile, research, sources, lang);
 
-  const out = { ...fit, sources, profile };
+  // SCOUT the listing first so the scam check AND the cultural search can share
+  // the same place (the listing's own address when no area was picked).
+  let listingFacts = null;
+  if (hasListing) listingFacts = await scoutListing(await buildScoutContent(listing), lang);
 
-  // Sub-check: if a listing was provided, run a light scam/fact-check.
-  if (listing && typeof listing === "string") {
-    const scoutContent = await buildScoutContent(listing);
-    const scouted = await scoutListing(scoutContent, lang);
-    out.scam = await inspectListing(scouted, lang);
+  const effectiveLocation =
+    (location && location.trim()) ||
+    (listingFacts && listingFacts.location && listingFacts.location !== "unknown" ? listingFacts.location : "");
+
+  // Location-aware, profile-aware scam check.
+  let scam = null;
+  if (hasListing) {
+    scam = await inspectListing(listingFacts, effectiveLocation || "the listing's stated area", profile, lang);
   }
 
-  return out;
+  // No place to research -> return the scam result on its own (still integrated path).
+  if (!effectiveLocation) {
+    if (scam && scam.risk !== "safe") scam = { ...scam, ...(await rightsRecourse(listingFacts, scam, lang)) };
+    return { scam, profile, effective_location: null };
+  }
+
+  // Grounded research + cultural scoring, with the scam result fused into the verdict.
+  const { text: research, sources } = await discoverPlaces(effectiveLocation, profile, lang);
+  const fit = await filterFit(effectiveLocation, profile, research, sources, scam, lang);
+
+  // Add rights + draft complaint only when the listing is actually risky.
+  if (scam && scam.risk !== "safe") scam = { ...scam, ...(await rightsRecourse(listingFacts, scam, lang)) };
+
+  return { ...fit, sources, profile, effective_location: effectiveLocation, ...(scam ? { scam } : {}) };
 }
 
 // ===========================================================================
@@ -293,13 +337,18 @@ const scoutListing = (content, lang) =>
     content, SCOUT_SCHEMA, 1024,
   );
 
-const inspectListing = (listing, lang) => {
+const inspectListing = (listing, location, profile, lang) => {
   const bedKey = String(Math.max(0, Number(listing.beds ?? -1)));
   const baselineRent = HUD_FMR.monthly_fmr_usd[bedKey] ?? "unknown";
   return runJSON(
-    `You are INSPECTOR, a rental-fraud analyst. Given a structured listing and a HUD Fair Market Rent (FMR) baseline, flag scam patterns and assign risk.
-Look for: below-market bait pricing, off-platform/irreversible payment (Zelle, wire, gift cards, crypto), deposit before viewing, absentee/abroad landlord, urgency, refusal to show, reused/stock photos. Each flag = label + one-sentence why. No red flags -> risk "safe". ${respondIn(lang)}`,
-    JSON.stringify({ listing, hud_fmr_baseline: { zip: HUD_FMR.zip, area: HUD_FMR.area, year: HUD_FMR.year, monthly_fmr_for_this_bedroom_count_usd: baselineRent, full_table_usd: HUD_FMR.monthly_fmr_usd } }),
+    `You are INSPECTOR, a rental-fraud analyst protecting newcomers and immigrants, who are disproportionately targeted by rental scams. You are given a structured listing, the AREA the renter is actually searching in, and the renter's cultural profile.
+Judge the price against the TYPICAL market rent for that specific area (use your knowledge of the location; the HUD figure below is only a Boston example anchor, not the rule). Flag: below-market bait pricing for that area, off-platform/irreversible payment (Zelle, wire, gift cards, crypto), deposit before viewing, absentee/abroad landlord, urgency/pressure, refusal to show the unit, reused/stock photos, and tactics that specifically prey on someone new to the US or not fluent in English. Each flag = label + one-sentence why. No meaningful red flags -> risk "safe". ${respondIn(lang)}`,
+    JSON.stringify({
+      listing,
+      search_area: location,
+      renter_profile: { heritage: profile?.heritage, languages: profile?.languages },
+      hud_example_anchor: { zip: HUD_FMR.zip, monthly_fmr_for_this_bedroom_usd: baselineRent },
+    }),
     INSPECTOR_SCHEMA, 1024,
   );
 };
@@ -315,7 +364,7 @@ Explain which move-in fees are legal in Massachusetts (first month, last month, 
 async function analyzeListing(input, lang) {
   const content = await buildScoutContent(input);
   const listing = await scoutListing(content, lang);
-  const inspection = await inspectListing(listing, lang);
+  const inspection = await inspectListing(listing, listing.location, null, lang);
   const recourse = await rightsRecourse(listing, inspection, lang);
   return { risk: inspection.risk, flags: inspection.flags, rights: recourse.rights, next_steps: recourse.next_steps, draft_complaint: recourse.draft_complaint, listing };
 }
@@ -340,8 +389,10 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/cultural-fit", async (req, res) => {
   try {
     const { location, origin, languages, survey, lang, listing } = req.body ?? {};
-    if (!location || typeof location !== "string") {
-      return res.status(400).json({ error: "Body must include a non-empty string `location` (address, neighborhood, or ZIP)." });
+    const hasLoc = typeof location === "string" && location.trim();
+    const hasListing = typeof listing === "string" && listing.trim();
+    if (!hasLoc && !hasListing) {
+      return res.status(400).json({ error: "Provide a `location` (area/ZIP) and/or a `listing` to check." });
     }
     const result = await culturalFit({
       location,
