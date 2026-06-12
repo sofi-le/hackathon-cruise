@@ -1,45 +1,67 @@
-// Harbor frontend — talks to the same-origin backend (/cultural-fit).
+// Harbor frontend — dropdown filters -> same-origin /cultural-fit.
 const $ = (id) => document.getElementById(id);
-const cares = new Set();
 
-// chip toggles
-document.querySelectorAll("#cares .chip").forEach((b) =>
-  b.addEventListener("click", () => {
-    b.classList.toggle("on");
-    cares.has(b.dataset.v) ? cares.delete(b.dataset.v) : cares.add(b.dataset.v);
-  })
-);
+// multi-select chip groups
+function chipSet(groupId) {
+  const set = new Set();
+  document.querySelectorAll(`#${groupId} .chip`).forEach((b) =>
+    b.addEventListener("click", () => {
+      b.classList.toggle("on");
+      set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v);
+    })
+  );
+  return set;
+}
+const cares = chipSet("cares");
+const amenities = chipSet("amenities");
+const access = chipSet("access");
+
+// "Other…" reveal for location + culture
+$("location").addEventListener("change", () => ($("otherLocWrap").hidden = $("location").value !== "__other"));
+$("culture").addEventListener("change", () => ($("otherCulWrap").hidden = $("culture").value !== "__other"));
 
 $("demo").addEventListener("click", () => {
-  $("origin").value = "Hong Kong (Cantonese)";
-  $("languages").value = "Cantonese, English";
-  $("cook").value = "Cantonese groceries, fresh seafood, dim sum";
-  $("faith").value = "none";
-  $("social").value = "mahjong, tai chi";
-  $("location").value = "Quincy, MA 02169";
-  ["food", "community", "language"].forEach((v) => {
-    const c = document.querySelector(`#cares .chip[data-v="${v}"]`);
-    if (c && !c.classList.contains("on")) c.click();
-  });
+  $("why").value = "Job";
+  $("timing").value = "Within 1 month";
+  $("aptType").value = "1 bedroom";
+  $("location").value = "Quincy, MA";
+  $("culture").value = "Chinese — Cantonese / Hong Kong";
+  ["food", "community", "language"].forEach((v) => toggle("cares", v));
+  ["In-unit laundry", "Parking"].forEach((v) => toggle("amenities", v));
+  toggle("access", "Elevator");
 });
+function toggle(group, v) {
+  const c = document.querySelector(`#${group} .chip[data-v="${v}"]`);
+  if (c && !c.classList.contains("on")) c.click();
+}
 
 $("go").addEventListener("click", run);
 
+function pickLocation() {
+  const v = $("location").value;
+  return v === "__other" ? $("otherLoc").value.trim() : v;
+}
+function pickCulture() {
+  const v = $("culture").value;
+  return v === "__other" ? $("otherCul").value.trim() : v;
+}
+
 async function run() {
-  const location = $("location").value.trim();
-  if (!location) return showErr("Please enter a neighborhood, address, or ZIP.");
+  const location = pickLocation();
+  if (!location) return showErr("Please pick an area (or choose Other and type one).");
   showErr("");
 
   const body = {
     location,
-    origin: $("origin").value.trim(),
-    languages: $("languages").value.split(",").map((s) => s.trim()).filter(Boolean),
-    lang: $("lang").value.trim() || "English",
+    origin: pickCulture(),
+    lang: ($("lang").value || "English").replace(/\s*\(.+\)/, ""), // strip the "(Chinese)" hint
     survey: {
-      cook_at_home: $("cook").value.trim(),
-      faith: $("faith").value.trim(),
-      social: $("social").value.split(",").map((s) => s.trim()).filter(Boolean),
+      why_moving: $("why").value,
+      move_timing: $("timing").value,
+      apartment_type: $("aptType").value,
       cares_most_about: [...cares],
+      amenities: [...amenities],
+      accessibility: [...access],
     },
   };
   const listing = $("listing").value.trim();
@@ -67,7 +89,6 @@ function setLoading(on) {
   if (on) $("result").hidden = true;
   $("go").disabled = on;
 }
-
 function showErr(msg) {
   const el = $("err");
   el.hidden = !msg;
@@ -108,17 +129,9 @@ function render(d) {
       </div>`;
   }
 
-  if (d.safety?.summary) html += `<div class="section-title">Safety</div><p class="why">${esc(d.safety.summary)}</p>`;
-
-  if (d.gaps?.length) {
-    html += `<div class="section-title">Gaps</div><ul class="list">` +
-      d.gaps.map((g) => `<li>${esc(g)}</li>`).join("") + `</ul>`;
-  }
-
-  if (d.sources?.length) {
-    html += `<div class="section-title">Sources</div><div class="sources">` +
-      d.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || s.url)}</a>`).join("") + `</div>`;
-  }
+  if (d.safety?.summary) html += `<div class="section-title">🛡️ Safety</div><p class="why">${esc(d.safety.summary)}</p>`;
+  if (d.gaps?.length) html += `<div class="section-title">🔎 Gaps</div><ul class="list">` + d.gaps.map((g) => `<li>${esc(g)}</li>`).join("") + `</ul>`;
+  if (d.sources?.length) html += `<div class="section-title">📎 Sources</div><div class="sources">` + d.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || s.url)}</a>`).join("") + `</div>`;
 
   const r = $("result");
   r.innerHTML = html;
