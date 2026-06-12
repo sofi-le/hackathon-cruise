@@ -1,5 +1,5 @@
 // Harbor — rental-scam detector backend (standalone demo server, no database)
-// 3-step agent pipeline on the Claude API. Run with: npm start
+// 3-step agent pipeline on the Google Gemini API. Run with: npm start
 //
 // Frontend contract:  POST /analyze-listing  { input: string, lang: string }
 //   input -> plain text, an http(s) URL, OR a base64 screenshot (data URL or raw base64)
@@ -7,16 +7,16 @@
 // Returns: { risk, flags, rights, next_steps, draft_complaint, listing }
 
 import express from "express";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "gemini-2.5-flash";
 const PORT = process.env.PORT || 8787;
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error("Missing ANTHROPIC_API_KEY. Add it to server/.env (see .env.example).");
+if (!process.env.GEMINI_API_KEY) {
+  console.error("Missing GEMINI_API_KEY. Add it to server/.env (see .env.example).");
   process.exit(1);
 }
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); // server-side only
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }); // server-side only
 
 // ---------------------------------------------------------------------------
 // Hardcoded HUD Fair Market Rent baseline for one Boston ZIP (FY2024, approx.)
@@ -66,12 +66,11 @@ async function fetchUrlText(url) {
   }
 }
 
-const imageTextPrompt = () => ({
-  type: "text",
+const imageTextPart = () => ({
   text: "This is a screenshot of a rental listing. Read it carefully and extract the listing details.",
 });
 
-// Decide how to feed `input` to the SCOUT agent.
+// Decide how to feed `input` to the SCOUT agent. Returns an array of Gemini "parts".
 async function buildScoutContent(input) {
   const trimmed = input.trim();
 
@@ -79,8 +78,8 @@ async function buildScoutContent(input) {
   const dataUrl = trimmed.match(/^data:(image\/[a-zA-Z.+-]+);base64,(.+)$/s);
   if (dataUrl) {
     return [
-      imageTextPrompt(),
-      { type: "image", source: { type: "base64", media_type: dataUrl[1], data: dataUrl[2] } },
+      imageTextPart(),
+      { inlineData: { mimeType: dataUrl[1], data: dataUrl[2] } },
     ];
   }
 
@@ -90,51 +89,48 @@ async function buildScoutContent(input) {
     const mime = imageMediaType(compact);
     if (mime) {
       return [
-        imageTextPrompt(),
-        { type: "image", source: { type: "base64", media_type: mime, data: compact } },
+        imageTextPart(),
+        { inlineData: { mimeType: mime, data: compact } },
       ];
     }
   }
 
   // URL
   if (/^https?:\/\/\S+$/i.test(trimmed)) {
-    return [{ type: "text", text: await fetchUrlText(trimmed) }];
+    return [{ text: await fetchUrlText(trimmed) }];
   }
 
   // plain text
-  return [{ type: "text", text: `RENTAL LISTING:\n${trimmed}` }];
+  return [{ text: `RENTAL LISTING:\n${trimmed}` }];
 }
 
 // ---------------------------------------------------------------------------
-// Structured-output schemas (guarantee parseable JSON — no hand-parsing)
+// Structured-output schemas (Gemini responseSchema format — guarantees JSON)
 // ---------------------------------------------------------------------------
 const SCOUT_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+  type: "OBJECT",
   properties: {
-    price: { type: "string", description: "Monthly rent as stated, or 'unknown'." },
-    location: { type: "string" },
-    beds: { type: "integer", description: "Number of bedrooms; 0 for studio, -1 if unknown." },
-    contact_method: { type: "string" },
-    payment_ask: { type: "string", description: "How payment/deposit is requested (e.g. Zelle, wire, none stated)." },
-    viewing_offered: { type: "boolean" },
-    landlord_claims: { type: "string", description: "Notable claims the landlord makes about themselves/situation." },
-    photos_note: { type: "string", description: "Anything notable about the photos (stocky, watermarked, mismatched, none)." },
+    price: { type: "STRING", description: "Monthly rent as stated, or 'unknown'." },
+    location: { type: "STRING" },
+    beds: { type: "INTEGER", description: "Number of bedrooms; 0 for studio, -1 if unknown." },
+    contact_method: { type: "STRING" },
+    payment_ask: { type: "STRING", description: "How payment/deposit is requested (e.g. Zelle, wire, none stated)." },
+    viewing_offered: { type: "BOOLEAN" },
+    landlord_claims: { type: "STRING", description: "Notable claims the landlord makes about themselves/situation." },
+    photos_note: { type: "STRING", description: "Anything notable about the photos (stocky, watermarked, mismatched, none)." },
   },
   required: ["price", "location", "beds", "contact_method", "payment_ask", "viewing_offered", "landlord_claims", "photos_note"],
 };
 
 const INSPECTOR_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+  type: "OBJECT",
   properties: {
-    risk: { type: "string", enum: ["safe", "caution", "scam"] },
+    risk: { type: "STRING", enum: ["safe", "caution", "scam"] },
     flags: {
-      type: "array",
+      type: "ARRAY",
       items: {
-        type: "object",
-        additionalProperties: false,
-        properties: { flag: { type: "string" }, why: { type: "string" } },
+        type: "OBJECT",
+        properties: { flag: { type: "STRING" }, why: { type: "STRING" } },
         required: ["flag", "why"],
       },
     },
@@ -143,12 +139,11 @@ const INSPECTOR_SCHEMA = {
 };
 
 const RIGHTS_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+  type: "OBJECT",
   properties: {
-    rights: { type: "string", description: "Plain-language summary of which fees are legal in this jurisdiction." },
-    next_steps: { type: "array", items: { type: "string" } },
-    draft_complaint: { type: "string", description: "A short, ready-to-send draft complaint to the state Attorney General." },
+    rights: { type: "STRING", description: "Plain-language summary of which fees are legal in this jurisdiction." },
+    next_steps: { type: "ARRAY", items: { type: "STRING" } },
+    draft_complaint: { type: "STRING", description: "A short, ready-to-send draft complaint to the state Attorney General." },
   },
   required: ["rights", "next_steps", "draft_complaint"],
 };
@@ -156,16 +151,19 @@ const RIGHTS_SCHEMA = {
 // ---------------------------------------------------------------------------
 // Agent runner
 // ---------------------------------------------------------------------------
-async function runAgent(system, content, schema, maxTokens = 1500) {
-  const msg = await client.messages.create({
+async function runAgent(system, content, schema, maxTokens = 2048) {
+  const response = await ai.models.generateContent({
     model: MODEL,
-    max_tokens: maxTokens,
-    system,
-    messages: [{ role: "user", content }],
-    output_config: { format: { type: "json_schema", schema } },
+    contents: content, // string OR array of parts
+    config: {
+      systemInstruction: system,
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      maxOutputTokens: maxTokens,
+      thinkingConfig: { thinkingBudget: 0 }, // disable thinking for a fast demo
+    },
   });
-  const block = msg.content.find((b) => b.type === "text");
-  return JSON.parse(block?.text ?? "{}");
+  return JSON.parse(response.text ?? "{}");
 }
 
 const respondIn = (lang) =>
@@ -212,7 +210,7 @@ Explain which move-in fees are legal in Massachusetts (first month, last month, 
 Then give concise, practical next steps for someone who suspects this listing is a scam, and write a SHORT draft complaint to the Massachusetts Attorney General's Office (Consumer Protection Division) that the user can fill in and send. The tone should be clear and accessible for an immigrant who may be new to US renting. ${respondIn(lang)}`,
     JSON.stringify({ listing, risk: inspection.risk, flags: inspection.flags, jurisdiction: "Massachusetts" }),
     RIGHTS_SCHEMA,
-    2000,
+    2048,
   );
 
   return {

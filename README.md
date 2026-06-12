@@ -1,7 +1,7 @@
 # Harbor — rental-scam detector for immigrants
 
-Backend: one standalone Node server running a 3-step agent pipeline on the Claude API
-(`claude-sonnet-4-6`, key server-side only). **No database, no Supabase** — just run it.
+Backend: one standalone Node server running a 3-step agent pipeline on the Google Gemini API
+(`gemini-2.5-flash`, key server-side only). **No database, no Supabase** — just run it.
 
 ```
 SCOUT  ──▶  INSPECTOR  ──▶  RIGHTS_RECOURSE
@@ -29,10 +29,12 @@ Needs Node 20.6+ (uses built-in `--env-file` and global `fetch`).
 
 ```bash
 cd server
-cp .env.example .env          # then paste your ANTHROPIC_API_KEY into .env
+cp .env.example .env          # then paste your GEMINI_API_KEY into .env
 npm install
 npm start                     # -> http://localhost:8787
 ```
+
+Get a Gemini key (free tier available) at https://aistudio.google.com/apikey
 
 Smoke test in another terminal:
 
