@@ -1,0 +1,40 @@
+{
+  "hud_fmr_baseline": {
+    "zip": "02118",
+    "area": "Boston-Cambridge-Quincy, MA-NH HUD Metro FMR Area",
+    "year": 2024,
+    "monthly_fmr_usd": { "studio": 2096, "1br": 2364, "2br": 2826, "3br": 3543, "4br": 3879 }
+  },
+  "listings": [
+    {
+      "id": "scam-1",
+      "label": "scam",
+      "pattern": "below-market bait + wire deposit + absentee landlord",
+      "input": "Beautiful sunny 2BR in South End, 02118 — only $1,200/month, utilities included! I was recently relocated abroad for missionary work so I cannot show the apartment in person, but the place is move-in ready. To reserve it, send the first month + $1,200 security deposit by Zelle or Western Union and I will FedEx you the keys and lease. God bless. Please hurry, many people are interested."
+    },
+    {
+      "id": "scam-2",
+      "label": "scam",
+      "pattern": "deposit-before-viewing + urgency + gift-card payment",
+      "input": "Renting cozy 1 bedroom near Boston Medical Center, $1,000/mo. No credit check, no broker, perfect for students and new arrivals. Apartment is occupied right now so no showings until you secure it. Send a $500 holding deposit in Apple gift cards today to hold it — this won't last, I have 12 other inquiries. Text me only, do not call."
+    },
+    {
+      "id": "scam-3",
+      "label": "scam",
+      "pattern": "reused photos + off-platform payment + email-only contact",
+      "input": "Luxury 3BR condo South End 02118 — $1,500/month including parking and heat. (Photos look like a staged real-estate listing.) Owner is out of state and uses a 'rental agent' who will mail the keys after you pay first, last, and deposit via CashApp. Contact only through email; the agent cannot meet you but is fully trustworthy."
+    },
+    {
+      "id": "legit-1",
+      "label": "legit",
+      "pattern": "at-market rent + in-person viewing + standard MA fees",
+      "input": "2BR apartment in the South End, 02118, available Sept 1 — $2,850/month. Hardwood floors, laundry in building. Showings this Saturday 10am–12pm, please come by. Standard move-in: first month, last month, and one month security deposit, paid by check or bank transfer after you sign the lease. Managed by Beacon Hill Property Management, licensed in MA."
+    },
+    {
+      "id": "legit-2",
+      "label": "legit",
+      "pattern": "market rent + broker disclosed + viewing offered",
+      "input": "Studio in the South End near 02118, $2,100/month, heat and hot water included. Available now. Broker fee equal to one month (disclosed upfront). We do in-person tours daily; schedule through our office line. Application via our website with standard credit and income check. Lease and payment handled in person at signing."
+    }
+  ]
+}
